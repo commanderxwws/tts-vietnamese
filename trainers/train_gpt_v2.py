@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-End-to-end finetuning entry point for IndexTTS2 (GPT module) with Japanese data.
+End-to-end finetuning entry point for IndexTTS2 (GPT module) with Vietnamese data.
 
 This trainer expects the preprocessing pipeline to have produced manifests where each
 sample record stores paths to:
@@ -19,10 +19,10 @@ chosen output directory.
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import math
 import os
-import datetime
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -30,26 +30,28 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import torch
 import torch.nn.functional as F
+from omegaconf import OmegaConf
 from torch import nn
+from torch.nn.utils.rnn import pad_sequence
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
-from torch.nn.utils.rnn import pad_sequence
 from transformers import get_cosine_schedule_with_warmup
-from omegaconf import OmegaConf
 
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.utils.front import TextNormalizer, TextTokenizer
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Finetune IndexTTS2 GPT on Japanese data.")
+    parser = argparse.ArgumentParser(description="Finetune IndexTTS2 GPT on vietnamese data.")
     parser.add_argument("--train-manifest", type=Path, required=True, help="Training manifest JSONL.")
     parser.add_argument("--val-manifest", type=Path, required=True, help="Validation manifest JSONL.")
     parser.add_argument("--tokenizer", type=Path, required=True, help="SentencePiece model path.")
     parser.add_argument("--config", type=Path, default=Path("checkpoints/config.yaml"), help="Model config YAML.")
-    parser.add_argument("--base-checkpoint", type=Path, default=Path("checkpoints/gpt.pth"), help="Base GPT checkpoint.")
-    parser.add_argument("--output-dir", type=Path, default=Path("trained_ckpts"), help="Directory for checkpoints/logs.")
+    parser.add_argument("--base-checkpoint", type=Path, default=Path("checkpoints/gpt.pth"),
+                        help="Base GPT checkpoint.")
+    parser.add_argument("--output-dir", type=Path, default=Path("trained_ckpts"),
+                        help="Directory for checkpoints/logs.")
     parser.add_argument("--batch-size", type=int, default=4, help="Mini-batch size per optimisation step.")
     parser.add_argument("--grad-accumulation", type=int, default=1, help="Gradient accumulation steps.")
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs.")
@@ -58,7 +60,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--warmup-steps", type=int, default=1000, help="LR warmup steps.")
     parser.add_argument("--max-steps", type=int, default=0, help="Optional max optimiser steps (0 = unlimited).")
     parser.add_argument("--log-interval", type=int, default=100, help="Steps between training log entries.")
-    parser.add_argument("--val-interval", type=int, default=0, help="Validation frequency in steps (0 = once per epoch).")
+    parser.add_argument("--val-interval", type=int, default=0,
+                        help="Validation frequency in steps (0 = once per epoch).")
     parser.add_argument("--num-workers", type=int, default=0, help="DataLoader workers.")
     parser.add_argument("--grad-clip", type=float, default=1.0, help="Gradient norm clipping value.")
     parser.add_argument("--text-loss-weight", type=float, default=0.2, help="Weight for text CE loss.")
@@ -92,7 +95,7 @@ class Sample:
     target_id: Optional[str] = None
 
 
-class JapaneseGPTDataset(Dataset):
+class VietnameseGPTDataset(Dataset):
     def __init__(self, manifest_path: Path):
         self.samples: List[Sample] = []
         skipped = 0
@@ -305,9 +308,9 @@ def build_model(cfg_path: Path, tokenizer: TextTokenizer, base_checkpoint: Path,
 
 
 def compute_losses(
-    model: UnifiedVoice,
-    batch: Dict[str, torch.Tensor],
-    device: torch.device,
+        model: UnifiedVoice,
+        batch: Dict[str, torch.Tensor],
+        device: torch.device,
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, float]]:
     condition = batch["condition"].to(device)
     text_ids = batch["text_ids"].to(device)
@@ -344,12 +347,12 @@ def compute_losses(
     text_logits, mel_logits = model.get_logits(conds, text_emb, model.text_head, mel_emb, model.mel_head)
 
     text_mask = (
-        torch.arange(text_targets.size(1), device=device).unsqueeze(0)
-        < (text_lengths + 1).unsqueeze(1)
+            torch.arange(text_targets.size(1), device=device).unsqueeze(0)
+            < (text_lengths + 1).unsqueeze(1)
     )
     mel_mask = (
-        torch.arange(mel_targets.size(1), device=device).unsqueeze(0)
-        < (code_lengths + 1).unsqueeze(1)
+            torch.arange(mel_targets.size(1), device=device).unsqueeze(0)
+            < (code_lengths + 1).unsqueeze(1)
     )
 
     text_ce = F.cross_entropy(text_logits, text_targets, reduction="none")
@@ -375,15 +378,15 @@ def compute_losses(
 
 
 def save_checkpoint(
-    path: Path,
-    model: nn.Module,
-    optimizer: torch.optim.Optimizer,
-    scheduler,
-    scaler,
-    epoch: int,
-    step: int,
-    recent_checkpoints: List[str],
-    extra: Dict[str, str] | None = None,
+        path: Path,
+        model: nn.Module,
+        optimizer: torch.optim.Optimizer,
+        scheduler,
+        scaler,
+        epoch: int,
+        step: int,
+        recent_checkpoints: List[str],
+        extra: Dict[str, str] | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     state = {
@@ -438,8 +441,8 @@ def main() -> None:
     tokenizer = load_tokenizer(args.tokenizer)
     model = build_model(args.config, tokenizer, args.base_checkpoint, device)
 
-    train_dataset = JapaneseGPTDataset(args.train_manifest)
-    val_dataset = JapaneseGPTDataset(args.val_manifest)
+    train_dataset = VietnameseGPTDataset(args.train_manifest)
+    val_dataset = VietnameseGPTDataset(args.val_manifest)
 
     use_cuda = torch.cuda.is_available()
 
@@ -461,7 +464,8 @@ def main() -> None:
     )
 
     optimizer = AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
-    total_steps = args.max_steps if args.max_steps > 0 else args.epochs * max(1, len(train_loader)) // max(1, args.grad_accumulation)
+    total_steps = args.max_steps if args.max_steps > 0 else args.epochs * max(1, len(train_loader)) // max(1,
+                                                                                                           args.grad_accumulation)
     total_steps = max(total_steps, 1)
     scheduler = get_cosine_schedule_with_warmup(
         optimizer,
@@ -621,7 +625,6 @@ def main() -> None:
             )
             if val_metrics["mel_loss"] < best_val:
                 best_val = val_metrics["mel_loss"]
-
 
     if global_step > 0 and last_saved_step != global_step:
         ckpt_path = output_dir / f"model_step{global_step}.pth"
