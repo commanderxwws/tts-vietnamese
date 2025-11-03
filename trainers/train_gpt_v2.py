@@ -63,7 +63,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--log-interval", type=int, default=100, help="Steps between training log entries.")
     parser.add_argument("--val-interval", type=int, default=0,
                         help="Validation frequency in steps (0 = once per epoch).")
-    parser.add_argument("--num-workers", type=int, default=0, help="DataLoader workers.")
+    parser.add_argument("--num-workers", type=int, default=8, help="DataLoader workers.")
     parser.add_argument("--grad-clip", type=float, default=1.0, help="Gradient norm clipping value.")
     parser.add_argument("--text-loss-weight", type=float, default=0.2, help="Weight for text CE loss.")
     parser.add_argument("--mel-loss-weight", type=float, default=0.8, help="Weight for semantic CE loss.")
