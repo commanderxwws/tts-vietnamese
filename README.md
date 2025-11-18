@@ -189,7 +189,7 @@ python tools/prune_gpt_checkpoint.py --checkpoint runs/vi/finetune_ckpts/last.pt
 ```bash
 python predict.py \
   --prompt ref_audio.wav \
-  --text "Xin chào bạn nhé. Hôm nay trời đẹp quá!"
+  --text "Chiến lược quân sự là nghệ thuật định hướng và sử dụng sức mạnh quân sự nhằm đạt được mục tiêu chính trị, và qua từng thời kỳ, con người đã phát triển nhiều cách tiếp cận khác nhau. Từ thời cổ đại, Tôn Tử đã nhấn mạnh yếu tố mưu lược và coi trọng việc giành thắng lợi bằng trí tuệ, tạo thế và đánh vào tâm lý đối phương hơn là chỉ dựa vào sức mạnh. Trong lịch sử, có những chiến lược như tiêu hao, tức là dùng sức mạnh liên tục để bào mòn lực lượng địch, hay quyết chiến nhanh, tập trung toàn bộ binh lực vào một trận đánh then chốt để xoay chuyển cục diện, như Hannibal ở Cannae hay Võ Nguyên Giáp ở Điện Biên Phủ."
 ```
 
 The script internally handles sentence splitting and saves `gen.wav`. Edit the file to point to your checkpoint/config.
