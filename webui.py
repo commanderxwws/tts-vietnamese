@@ -29,23 +29,25 @@ parser.add_argument("--fp16", action="store_true", default=False, help="Use FP16
 parser.add_argument("--deepspeed", action="store_true", default=False, help="Use DeepSpeed to accelerate if available")
 parser.add_argument("--cuda_kernel", action="store_true", default=False, help="Use CUDA kernel for inference if available")
 parser.add_argument("--gui_seg_tokens", type=int, default=120, help="GUI: Max tokens per generation segment")
+parser.add_argument("--share", action="store_true", default=False, help="Create a public Gradio share link")
 cmd_args = parser.parse_args()
 
-if not os.path.exists(cmd_args.model_dir):
-    print(f"Model directory {cmd_args.model_dir} does not exist. Please download the model first.")
-    sys.exit(1)
+# Auto-download is handled by IndexTTS2 class
+# if not os.path.exists(cmd_args.model_dir):
+#     print(f"Model directory {cmd_args.model_dir} does not exist. Please download the model first.")
+#     sys.exit(1)
 
-for file in [
-    "bpe.model",
-    "gpt.pth",
-    "config.yaml",
-    "s2mel.pth",
-    "wav2vec2bert_stats.pt"
-]:
-    file_path = os.path.join(cmd_args.model_dir, file)
-    if not os.path.exists(file_path):
-        print(f"Required file {file_path} does not exist. Please download it.")
-        sys.exit(1)
+# for file in [
+#     "bpe.model",
+#     "gpt.pth",
+#     "config.yaml",
+#     "s2mel.pth",
+#     "wav2vec2bert_stats.pt"
+# ]:
+#     file_path = os.path.join(cmd_args.model_dir, file)
+#     if not os.path.exists(file_path):
+#         print(f"Required file {file_path} does not exist. Please download it.")
+#         sys.exit(1)
 
 import gradio as gr
 from indextts.infer_v2 import IndexTTS2
@@ -439,4 +441,4 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
 
 if __name__ == "__main__":
     demo.queue(20)
-    demo.launch(server_name=cmd_args.host, server_port=cmd_args.port)
+    demo.launch(server_name=cmd_args.host, server_port=cmd_args.port, share=cmd_args.share)
